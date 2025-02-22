@@ -1,9 +1,22 @@
+using Books_Management_API.Models;
+using dotenv.net;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
+
+DotEnv.Load();
+var connectionString = Environment.GetEnvironmentVariable("BACKEND_SERVER");
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddDbContext<BooksContext>(options =>
+    options.UseSqlServer(connectionString));
+
+
+builder.Services.AddControllers();
 
 var app = builder.Build();
 
@@ -15,5 +28,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthorization();
+app.MapControllers();
 
 app.Run();
