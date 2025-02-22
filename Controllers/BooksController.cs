@@ -57,27 +57,32 @@ namespace Books_Management_API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<ReadBookDTO>> PostBook(CreateBookDTO createBookDTO)
+        public async Task<ActionResult<IEnumerable<ReadBookDTO>>> PostBooks(List<CreateBookDTO> createBookDTOs)
         {
-            var book = new Book
+            if (createBookDTOs == null || createBookDTOs.Count == 0)
             {
-                Title = createBookDTO.Title,
-                Author = createBookDTO.Author,
-                PublicationYear = createBookDTO.PublicationYear
-            };
+                return BadRequest("Book list cannot be empty.");
+            }
 
-            _context.Books.Add(book);
+            var books = createBookDTOs.Select(dto => new Book
+            {
+                Title = dto.Title,
+                Author = dto.Author,
+                PublicationYear = dto.PublicationYear
+            }).ToList();
+
+            _context.Books.AddRange(books);
             await _context.SaveChangesAsync();
 
-            var readBookDTO = new ReadBookDTO
+            var readBookDTOs = books.Select(book => new ReadBookDTO
             {
                 Id = book.Id,
                 Title = book.Title,
                 Author = book.Author,
                 PublicationYear = book.PublicationYear
-            };
+            }).ToList();
 
-            return CreatedAtAction(nameof(GetBook), new { id = book.Id }, readBookDTO);
+            return CreatedAtAction(nameof(GetBooks), readBookDTOs);
         }
 
         [HttpPut("{id}")]
