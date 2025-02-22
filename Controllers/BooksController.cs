@@ -167,9 +167,9 @@ namespace Books_Management_API.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteBook(Guid id)
+        public async Task<IActionResult> DeleteBook([FromBody] DeleteBookDTO deleteBookDTO)
         {
-            var book = await _context.Books.FindAsync(id);
+            var book = await _context.Books.FindAsync(deleteBookDTO.Id);
             if (book == null)
             {
                 return NotFound();
@@ -181,10 +181,10 @@ namespace Books_Management_API.Controllers
             return NoContent();
         }
 
-        [HttpDelete("softdeletesingle/{id}")]
-        public async Task<IActionResult> SoftDeleteBook(Guid id)
+        [HttpDelete("softdeletesingle")]
+        public async Task<IActionResult> SoftDeleteBook([FromBody] DeleteBookDTO softDeleteBookDTO)
         {
-            var book = await _context.Books.FindAsync(id);
+            var book = await _context.Books.FindAsync(softDeleteBookDTO.Id);
             if (book == null)
             {
                 return NotFound();
@@ -198,13 +198,9 @@ namespace Books_Management_API.Controllers
         }
 
         [HttpDelete("softdelete")]
-        public async Task<IActionResult> SoftDeleteBooks([FromBody] List<Guid> ids)
+        public async Task<IActionResult> SoftDeleteBooks([FromBody] List<DeleteBookDTO> softDeleteBookDTOs)
         {
-            if (ids == null || ids.Count == 0)
-            {
-                return BadRequest("ID list cannot be empty.");
-            }
-
+            var ids = softDeleteBookDTOs.Select(dto => dto.Id).ToList();
             var books = await _context.Books.Where(b => ids.Contains(b.Id)).ToListAsync();
             if (books.Count != ids.Count)
             {

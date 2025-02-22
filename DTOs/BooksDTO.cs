@@ -21,4 +21,9 @@ namespace Books_Management_API.DTOs
         public int BookViews { get; set; }
         public double PopularityScore { get; set; }
     }
+
+    public class DeleteBookDTO
+    {
+        public Guid Id { get; set; }
+    }
 }
