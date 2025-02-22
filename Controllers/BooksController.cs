@@ -222,5 +222,27 @@ namespace Books_Management_API.Controllers
             return NoContent();
         }
 
+
+        [HttpGet("popular")]
+        public async Task<ActionResult<IEnumerable<string>>> GetPopularBooks(int pageNumber = 1, int pageSize = 10)
+        {
+            var books = await _context.Books
+                .Where(b => !b.IsDeleted)
+                .ToListAsync();
+
+            var popularBooks = books
+                .Select(book => new
+                {
+                    book.Title,
+                    PopularityScore = CalculatePopularityScore(book)
+                })
+                .OrderByDescending(b => b.PopularityScore)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(b => b.Title)
+                .ToList();
+
+            return Ok(popularBooks);
+        }
     }
 }
