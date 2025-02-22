@@ -15,6 +15,13 @@ namespace Books_Management_API.Controllers
     {
         private readonly BooksContext _context;
 
+        private double CalculatePopularityScore(Book book)
+        {
+            int currentYear = DateTime.UtcNow.Year;
+            int yearsSincePublished = currentYear - book.PublicationYear;
+            return (book.BookViews * 0.5) + (yearsSincePublished * 2);
+        }
+
         public BooksController(BooksContext context)
         {
             _context = context;
@@ -29,7 +36,9 @@ namespace Books_Management_API.Controllers
                 Id = book.Id,
                 Title = book.Title,
                 Author = book.Author,
-                PublicationYear = book.PublicationYear
+                PublicationYear = book.PublicationYear,
+                BookViews = book.BookViews,
+                PopularityScore=CalculatePopularityScore(book)
             }).ToList();
 
             return Ok(readBookDTOs);
@@ -45,12 +54,17 @@ namespace Books_Management_API.Controllers
                 return NotFound();
             }
 
+            book.BookViews += 1;
+            await _context.SaveChangesAsync();
+
             var readBookDTO = new ReadBookDTO
             {
                 Id = book.Id,
                 Title = book.Title,
                 Author = book.Author,
-                PublicationYear = book.PublicationYear
+                PublicationYear = book.PublicationYear,
+                BookViews = book.BookViews,
+                PopularityScore = CalculatePopularityScore(book)
             };
 
             return Ok(readBookDTO);
@@ -62,6 +76,17 @@ namespace Books_Management_API.Controllers
             if (createBookDTOs == null || createBookDTOs.Count == 0)
             {
                 return BadRequest("Book list cannot be empty.");
+            }
+
+            var duplicateTitles = createBookDTOs
+            .GroupBy(dto => dto.Title)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key)
+            .ToList();
+
+            if (duplicateTitles.Any())
+            {
+                return Conflict(new { message = $"Duplicate titles found in the provided list: {string.Join(", ", duplicateTitles)}" });
             }
 
             foreach (var createBookDTO in createBookDTOs)
@@ -88,7 +113,8 @@ namespace Books_Management_API.Controllers
                 Id = book.Id,
                 Title = book.Title,
                 Author = book.Author,
-                PublicationYear = book.PublicationYear
+                PublicationYear = book.PublicationYear,
+                PopularityScore = CalculatePopularityScore(book)
             }).ToList();
 
             return CreatedAtAction(nameof(GetBooks), readBookDTOs);

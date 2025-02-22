@@ -9,7 +9,7 @@ namespace Books_Management_API.DTOs
     {
         public string Title { get; set; }
         public string Author { get; set; }
-        public string PublicationYear { get; set; }
+        public int PublicationYear { get; set; }
     }
 
     public class ReadBookDTO
@@ -17,6 +17,8 @@ namespace Books_Management_API.DTOs
         public Guid Id { get; set; }
         public string Title { get; set; }
         public string Author { get; set; }
-        public string PublicationYear { get; set; }
+        public int PublicationYear { get; set; }
+        public int BookViews { get; set; }
+        public double PopularityScore { get; set; }
     }
 }
