@@ -64,6 +64,15 @@ namespace Books_Management_API.Controllers
                 return BadRequest("Book list cannot be empty.");
             }
 
+            foreach (var createBookDTO in createBookDTOs)
+            {
+                bool bookExists = await _context.Books.AnyAsync(b => b.Title == createBookDTO.Title);
+                if (bookExists)
+                {
+                    return Conflict(new { message = $"A book with the title '{createBookDTO.Title}' already exists." });
+                }
+            }
+
             var books = createBookDTOs.Select(dto => new Book
             {
                 Title = dto.Title,
@@ -92,6 +101,12 @@ namespace Books_Management_API.Controllers
             if (book == null)
             {
                 return NotFound();
+            }
+
+            bool bookExists = await _context.Books.AnyAsync(b => b.Title == createBookDTO.Title && b.Id != id);
+            if (bookExists)
+            {
+                return Conflict(new { message = $"A book with the title '{createBookDTO.Title}' already exists." });
             }
 
             book.Title = createBookDTO.Title;
