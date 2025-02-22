@@ -22,6 +22,11 @@ namespace Books_Management_API.Controllers
             return (book.BookViews * 0.5) + (yearsSincePublished * 2);
         }
 
+        private bool BookExists(Guid id)
+        {
+            return _context.Books.Any(e => e.Id == id);
+        }
+
         public BooksController(BooksContext context)
         {
             _context = context;
@@ -30,7 +35,8 @@ namespace Books_Management_API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ReadBookDTO>>> GetBooks()
         {
-            var books = await _context.Books.ToListAsync();
+            var books = await _context.Books.Where(b => !b.IsDeleted).ToListAsync();
+
             var readBookDTOs = books.Select(book => new ReadBookDTO
             {
                 Id = book.Id,
@@ -175,9 +181,46 @@ namespace Books_Management_API.Controllers
             return NoContent();
         }
 
-        private bool BookExists(Guid id)
+        [HttpDelete("softdeletesingle/{id}")]
+        public async Task<IActionResult> SoftDeleteBook(Guid id)
         {
-            return _context.Books.Any(e => e.Id == id);
+            var book = await _context.Books.FindAsync(id);
+            if (book == null)
+            {
+                return NotFound();
+            }
+
+            book.IsDeleted = true;
+            _context.Entry(book).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
+
+        [HttpDelete("softdelete")]
+        public async Task<IActionResult> SoftDeleteBooks([FromBody] List<Guid> ids)
+        {
+            if (ids == null || ids.Count == 0)
+            {
+                return BadRequest("ID list cannot be empty.");
+            }
+
+            var books = await _context.Books.Where(b => ids.Contains(b.Id)).ToListAsync();
+            if (books.Count != ids.Count)
+            {
+                return NotFound("One or more IDs do not exist.");
+            }
+
+            foreach (var book in books)
+            {
+                book.IsDeleted = true;
+                _context.Entry(book).State = EntityState.Modified;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
     }
 }
